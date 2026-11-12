@@ -1,4 +1,4 @@
-const CACHE = "urdu-book-v4";
+const CACHE = "urdu-book-v5";
 const SHELL = [
   "./", "./index.html", "./manifest.json", "./icon.svg",
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
