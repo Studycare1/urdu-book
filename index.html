@@ -402,12 +402,20 @@ async function loadBook(){
       return;
     }
     let doc;
+    
+    // 🔥 YAHAN HAI SPEED OPTIMIZATION 🔥
     if(src.type==='url'){
-      doc=await pdfjsLib.getDocument({url:src.url,disableAutoFetch:false,disableStream:false}).promise;
+      doc=await pdfjsLib.getDocument({
+        url: src.url,
+        disableAutoFetch: true,       // Ek sath puri file download nahi hogi
+        disableStream: false,         // Streaming on rahegi
+        rangeChunkSize: 1024 * 512    // 512KB ke chunks mein data load hoga
+      }).promise;
     } else {
       const buf=await src.blob.arrayBuffer();
       doc=await pdfjsLib.getDocument({data:new Uint8Array(buf),disableStream:true,disableAutoFetch:true}).promise;
     }
+    
     pdfDoc=doc; pageCount=doc.numPages; slider.max=pageCount;
     await loadHighlights(); await loadBookmarks();
     showLoader('پہلا صفحہ…');
@@ -432,7 +440,6 @@ async function init(){
   await loadBook();
 }
 
-// 🔥 UPLOAD LOGIC WITH FALLBACK FOR GITHUB PAGES (405 ERROR FIX) 🔥
 document.getElementById('fileInput').addEventListener('change', async e=>{
   const file=e.target.files[0]; if(!file) return;
   if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){alert('صرف PDF');return;}
@@ -442,7 +449,6 @@ document.getElementById('fileInput').addEventListener('change', async e=>{
   
   let uploadedToServer = false;
   
-  // 1. Try Server Upload (if on Localhost)
   if(MODE==='server'){
     try{
       info.textContent='اپلوڈ ہو رہی ہے… (سرور)';
@@ -455,11 +461,10 @@ document.getElementById('fileInput').addEventListener('change', async e=>{
         throw new Error('HTTP '+resp.status);
       }
     } catch(err){
-      console.warn('Server upload failed (likely 405 on GitHub Pages). Falling back to local...', err);
+      console.warn('Server upload failed, falling back to local...', err);
     }
   }
   
-  // 2. Fallback to IndexedDB (if on GitHub Pages or Server failed)
   if(!uploadedToServer){
     try{
       info.textContent='محفوظ ہو رہی ہے… (براؤزر)';
