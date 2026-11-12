@@ -248,12 +248,11 @@ let dirMode=localStorage.getItem('bk_dir')||'rtl';
 let darkMode=localStorage.getItem('bk_dark')==='1';
 let highlights={}, bookmarks=[];
 let deferredPrompt=null;
-let MODE='unknown'; // 'server' | 'static'
+let MODE='unknown';
 
 const MAX_CANVAS_SIDE=3800;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-/* ---------- Dark mode ---------- */
 function applyDark(){
   document.body.classList.toggle('dark', darkMode);
   const el=document.getElementById('mDark');
@@ -263,7 +262,6 @@ function applyDark(){
 }
 applyDark();
 
-/* ---------- Utils ---------- */
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastEl._t);
   toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1800);}
 function showLoader(m){loader.innerHTML='<div class="spin">'+(m||'لوڈ…')+'</div>';loader.classList.remove('hide');}
@@ -278,7 +276,6 @@ window.addEventListener('unhandledrejection', e=>{console.error('Reject:',e.reas
 
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-/* ---------- IndexedDB for static mode upload ---------- */
 function openDB(){return new Promise((res,rej)=>{
   const r=indexedDB.open('urdu-book',1);
   r.onupgradeneeded=e=>{const db=e.target.result;
@@ -296,7 +293,6 @@ async function idbDel(k){const db=await openDB();
   return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');
     tx.objectStore('files').delete(k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
 
-/* ---------- Mode detection ---------- */
 async function detectMode(){
   try{
     const r=await fetch('status?t='+Date.now(),{cache:'no-store'});
@@ -312,7 +308,6 @@ async function detectMode(){
   return 'static';
 }
 
-/* ---------- Highlights ---------- */
 function renderHL(){
   const w=hlCanvas.width, h=hlCanvas.height;
   hlCtx.clearRect(0,0,w,h);
@@ -343,7 +338,6 @@ async function loadHighlights(){
   try{highlights=JSON.parse(localStorage.getItem('bk_hl')||'{}');}catch(_){highlights={};}
 }
 
-/* ---------- Bookmarks ---------- */
 let bmSaveTimer;
 function saveBookmarks(){
   clearTimeout(bmSaveTimer);
@@ -379,7 +373,6 @@ function toggleBookmark(){
   saveBookmarks(); updateBookmarkUI();
 }
 
-/* ---------- Book loading ---------- */
 async function getBookSource(){
   if(MODE==='server'){
     try{
@@ -388,12 +381,10 @@ async function getBookSource(){
       if(j.exists && j.size>0) return {type:'url', url:'book.pdf?t='+Date.now()};
     }catch(e){}
   }
-  // static: try IndexedDB first
   try{
     const blob=await idbGet('book');
     if(blob && blob.size>1000) return {type:'blob', blob};
   }catch(e){}
-  // static: try committed file
   try{
     const r=await fetch('upload/book.pdf',{method:'HEAD'});
     if(r.ok) return {type:'url', url:'upload/book.pdf'};
@@ -441,37 +432,54 @@ async function init(){
   await loadBook();
 }
 
-/* ---------- Upload ---------- */
+// 🔥 UPLOAD LOGIC WITH FALLBACK FOR GITHUB PAGES (405 ERROR FIX) 🔥
 document.getElementById('fileInput').addEventListener('change', async e=>{
   const file=e.target.files[0]; if(!file) return;
   if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){alert('صرف PDF');return;}
+  
   const info=document.getElementById('uploadInfo'), prog=document.getElementById('uploadProgress'), bar=prog.firstElementChild;
   prog.classList.add('show'); bar.style.width='30%';
-  try{
-    if(MODE==='server'){
-      info.textContent='اپلوڈ ہو رہی ہے…';
+  
+  let uploadedToServer = false;
+  
+  // 1. Try Server Upload (if on Localhost)
+  if(MODE==='server'){
+    try{
+      info.textContent='اپلوڈ ہو رہی ہے… (سرور)';
       const resp=await fetch('upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      bar.style.width='100%';
-      info.textContent='✓ محفوظ (سرور)';
-    } else {
-      info.textContent='محفوظ ہو رہی ہے…';
+      if(resp.ok){
+        uploadedToServer = true;
+        bar.style.width='100%';
+        info.textContent='✓ محفوظ (سرور)';
+      } else {
+        throw new Error('HTTP '+resp.status);
+      }
+    } catch(err){
+      console.warn('Server upload failed (likely 405 on GitHub Pages). Falling back to local...', err);
+    }
+  }
+  
+  // 2. Fallback to IndexedDB (if on GitHub Pages or Server failed)
+  if(!uploadedToServer){
+    try{
+      info.textContent='محفوظ ہو رہی ہے… (براؤزر)';
       await idbPut('book', file);
       bar.style.width='100%';
       info.textContent='✓ محفوظ (براؤزر) — '+Math.round(file.size/1024)+' KB';
+    } catch(err){
+      console.error(err);
+      info.textContent='✗ ناکام: '+err.message;
+      prog.classList.remove('show'); bar.style.width='0';
+      showErr('Upload: '+err.message);
+      return;
     }
-    await new Promise(r=>setTimeout(r,400));
-    uploadScreen.classList.add('hidden');
-    await loadBook();
-  }catch(err){
-    console.error(err);
-    info.textContent='✗ ناکام: '+err.message;
-    prog.classList.remove('show'); bar.style.width='0';
-    showErr('Upload: '+err.message);
   }
+
+  await new Promise(r=>setTimeout(r,400));
+  uploadScreen.classList.add('hidden');
+  await loadBook();
 });
 
-/* ---------- Render ---------- */
 async function renderPage(n, keepView){
   if(!pdfDoc) return;
   n=clamp(n,1,pageCount); pageNum=n;
@@ -512,7 +520,6 @@ function applyTransform(){
 }
 function updatePager(){pill.textContent=pageNum+' / '+pageCount; slider.value=pageNum;}
 
-/* ---------- Highlights draw ---------- */
 let drawing=false, startPt=null, previewRect=null;
 function ptFromEvent(e){const r=hlCanvas.getBoundingClientRect();
   return {x:clamp((e.clientX-r.left)/r.width,0,1), y:clamp((e.clientY-r.top)/r.height,0,1)};}
@@ -543,7 +550,6 @@ hlCanvas.addEventListener('pointerup',endDraw);
 hlCanvas.addEventListener('pointercancel',endDraw);
 hlCanvas.addEventListener('pointerleave',()=>{if(drawing)endDraw();});
 
-/* ---------- Nav ---------- */
 function goTo(n,forward){
   n=clamp(n,1,pageCount); if(n===pageNum) return;
   const fwd=forward!==undefined?forward:(n>pageNum);
@@ -556,14 +562,12 @@ slider.addEventListener('change',()=>goTo(parseInt(slider.value,10)));
 pill.addEventListener('click',()=>{const v=prompt('صفحہ (1 - '+pageCount+')',pageNum);
   if(v!==null){const n=parseInt(v,10); if(!isNaN(n)) goTo(n);}});
 
-/* ---------- Zoom ---------- */
 document.getElementById('zoomIn').onclick=()=>{zoom=clamp(zoom+0.35,1,5);applyTransform();};
 document.getElementById('zoomOut').onclick=()=>{zoom=clamp(zoom-0.35,1,5);applyTransform();};
 document.getElementById('resetBtn').onclick=()=>{zoom=1;panX=panY=0;applyTransform();};
 stage.addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaY)>0){e.preventDefault();
   zoom=clamp(zoom*(e.deltaY<0?1.12:0.9),1,5);applyTransform();}},{passive:false});
 
-/* ---------- Touch ---------- */
 let touchMode=null,tStart=null,pinchD=0,pinchZ=1,panStart=null;
 const dist2=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
 stage.addEventListener('touchstart',e=>{
@@ -592,7 +596,6 @@ stage.addEventListener('touchend',e=>{
   if(e.touches.length===0){touchMode=null;tStart=null;panStart=null;}
 },{passive:true});
 
-/* ---------- Highlight tools ---------- */
 const hlBtn=document.getElementById('hlBtn');
 hlBtn.onclick=()=>{highlightMode=!highlightMode;
   hlBtn.classList.toggle('on',highlightMode);
@@ -616,7 +619,6 @@ document.getElementById('clearBtn').onclick=()=>{
   } else toast('کچھ نہیں');
 };
 
-/* ---------- Download / Share ---------- */
 document.getElementById('dlBtn').onclick=async()=>{
   if(!pdfDoc){toast('کتاب لوڈ نہیں');return;}
   let url=null, revoke=false;
@@ -646,7 +648,6 @@ document.getElementById('shareBtn').onclick=async()=>{
   }catch(e){}
 };
 
-/* ---------- Menu ---------- */
 const menuOverlay=document.getElementById('menuOverlay');
 function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));}
 document.getElementById('menuBtn').onclick=()=>menuOverlay.classList.remove('hidden');
@@ -669,10 +670,8 @@ document.getElementById('mBook').onclick=async()=>{
   uploadScreen.classList.remove('hidden');
 };
 
-/* ---------- Bookmark toggle ---------- */
 document.getElementById('bmBtn').onclick=toggleBookmark;
 
-/* ---------- Bookmarks list ---------- */
 function openBookmarksList(){
   const list=document.getElementById('bmList');
   list.innerHTML='';
@@ -700,7 +699,6 @@ document.getElementById('bmOverlay').addEventListener('click',e=>{
   if(e.target===document.getElementById('bmOverlay')) closeAllModals();
 });
 
-/* ---------- Thumbnails ---------- */
 async function openThumbnails(){
   closeAllModals();
   const grid=document.getElementById('thumbsGrid');
@@ -741,7 +739,6 @@ document.getElementById('thumbsOverlay').addEventListener('click',e=>{
   if(e.target===document.getElementById('thumbsOverlay')) closeAllModals();
 });
 
-/* ---------- Search ---------- */
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function doSearch(){
   const q=document.getElementById('searchInput').value.trim();
@@ -791,7 +788,6 @@ document.getElementById('searchOverlay').addEventListener('click',e=>{
   if(e.target===document.getElementById('searchOverlay')) closeAllModals();
 });
 
-/* ---------- Keyboard ---------- */
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   if(e.key==='ArrowRight') goTo(pageNum-1,false);
@@ -803,11 +799,9 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-/* ---------- Resize ---------- */
 let rzT; window.addEventListener('resize',()=>{clearTimeout(rzT);
   rzT=setTimeout(()=>{if(pdfDoc) renderPage(pageNum,true);},250);});
 
-/* ---------- PWA install ---------- */
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault(); deferredPrompt=e;
   document.getElementById('mInstall').style.display='flex';
@@ -822,7 +816,6 @@ document.getElementById('mInstall').onclick=async()=>{
   document.getElementById('mInstall').style.display='none';
 };
 
-/* ---------- Service worker ---------- */
 if('serviceWorker' in navigator && location.protocol !== 'file:'){
   navigator.serviceWorker.register('sw.js').then(()=>console.log('[sw] ok'))
     .catch(e=>console.warn('[sw] fail',e));
