@@ -1,25 +1,24 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#e0e5ec">
-<title>اردو کتاب — Reader</title>
+<title>Urdu Book — Reader</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#e0e5ec;--light:#fff;--dark:#a3b1c6;--text:#39445a;--muted:#7b8798;--accent:#5b6ef5;--shadow:rgba(163,177,198,.55);}
 body.dark{--bg:#1a1f28;--light:#252b36;--dark:#0e1219;--text:#d8dfea;--muted:#8a94a8;--accent:#7b8fff;--shadow:rgba(0,0,0,.6);}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',system-ui,sans-serif;
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   display:flex;flex-direction:column;height:100dvh;user-select:none;-webkit-user-select:none;transition:background .3s,color .3s;}
 
 .topbar{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;z-index:30;}
 .pill{font-size:11px;padding:7px 14px;border-radius:999px;cursor:pointer;
   box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);color:var(--muted);white-space:nowrap;}
-.title{flex:1;text-align:center;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.title{flex:1;text-align:center;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .icon-btn{border:none;background:var(--bg);color:var(--text);height:38px;min-width:38px;padding:0 8px;border-radius:11px;
   font-size:15px;font-family:inherit;cursor:pointer;
   box-shadow:4px 4px 8px var(--dark),-4px -4px 8px var(--light);transition:.12s;
@@ -53,8 +52,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Nastaliq Urdu','Ja
   box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);}
 .sw.sel{outline:2.5px solid var(--accent);outline-offset:2px;}
 .tools{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
-.btn{border:none;background:var(--bg);color:var(--text);border-radius:14px;padding:9px 2px 7px;font-size:9.5px;font-family:inherit;
-  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+.btn{border:none;background:var(--bg);color:var(--text);border-radius:14px;padding:9px 2px 7px;font-size:10px;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
   box-shadow:4px 4px 8px var(--dark),-4px -4px 8px var(--light);transition:.12s;}
 .btn:active{box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);transform:scale(.95);}
 .btn.on{color:var(--accent);box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);}
@@ -99,7 +98,7 @@ body.dark #loader{background:rgba(26,31,40,.94);}
 .menu-panel{background:var(--bg);border-radius:20px;width:100%;max-width:340px;padding:16px;
   box-shadow:14px 14px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:8px;}
 .menu-item{border:none;background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;
-  padding:12px 14px;border-radius:12px;text-align:right;cursor:pointer;
+  padding:12px 14px;border-radius:12px;text-align:left;cursor:pointer;
   box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);display:flex;align-items:center;gap:10px;transition:.15s;}
 .menu-item:active{box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);transform:scale(.98);}
 .menu-item.on{color:var(--accent);}
@@ -132,21 +131,21 @@ body.dark #loader{background:rgba(26,31,40,.94);}
 
 <div id="uploadScreen" class="hidden">
   <div class="uploadCard">
-    <h1>📖 اردو کتاب</h1>
-    <p>PDF منتخب کریں<br><span id="upHint">سرور کے upload/ فولڈر میں محفوظ ہوگی</span></p>
+    <h1>📖 Urdu Book</h1>
+    <p>Select PDF<br><span id="upHint">Will be saved in the upload/ folder on the server</span></p>
     <label class="uploadBtn">
       <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden>
-      <span>📂 PDF منتخب کریں</span>
+      <span>📂 Select PDF</span>
     </label>
     <div id="uploadInfo" class="uploadInfo"></div>
     <div id="uploadProgress" class="uploadProgress"><div></div></div>
-    <div class="hint" id="upHint2">💾 فائل محفوظ ہوتی ہے</div>
+    <div class="hint" id="upHint2">💾 File will be saved</div>
   </div>
 </div>
 
 <div class="topbar">
   <div class="pill" id="pill">— / —</div>
-  <div class="title">اردو کتاب</div>
+  <div class="title">Urdu Book</div>
   <button class="icon-btn" id="bmBtn" title="Bookmark">📑<span class="badge" id="bmCount" style="display:none">0</span></button>
   <button class="icon-btn" id="menuBtn" title="Menu">☰</button>
 </div>
@@ -170,45 +169,45 @@ body.dark #loader{background:rgba(26,31,40,.94);}
     <button class="sw" data-c="rgba(255,150,60,.45)" style="background:rgba(255,150,60,.75)"></button>
   </div>
   <div class="tools">
-    <button class="btn" id="prevBtn"><span class="ico">◀</span>پچھلا</button>
-    <button class="btn" id="nextBtn"><span class="ico">▶</span>اگلا</button>
-    <button class="btn" id="zoomOut"><span class="ico">➖</span>چھوٹا</button>
-    <button class="btn" id="zoomIn"><span class="ico">➕</span>بڑا</button>
-    <button class="btn" id="hlBtn"><span class="ico">🖍</span>ہائی لائٹ</button>
-    <button class="btn" id="undoBtn"><span class="ico">↶</span>انڈو</button>
-    <button class="btn" id="clearBtn"><span class="ico">🧹</span>صاف</button>
-    <button class="btn" id="dlBtn"><span class="ico">⬇</span>ڈاؤن لوڈ</button>
-    <button class="btn" id="shareBtn"><span class="ico">🔗</span>شیئر</button>
-    <button class="btn" id="resetBtn"><span class="ico">🎯</span>ری سیٹ</button>
+    <button class="btn" id="prevBtn"><span class="ico">◀</span>Prev</button>
+    <button class="btn" id="nextBtn"><span class="ico">▶</span>Next</button>
+    <button class="btn" id="zoomOut"><span class="ico">➖</span>Zoom Out</button>
+    <button class="btn" id="zoomIn"><span class="ico">➕</span>Zoom In</button>
+    <button class="btn" id="hlBtn"><span class="ico">🖍</span>Highlight</button>
+    <button class="btn" id="undoBtn"><span class="ico">↶</span>Undo</button>
+    <button class="btn" id="clearBtn"><span class="ico">🧹</span>Clear</button>
+    <button class="btn" id="dlBtn"><span class="ico">⬇</span>Download</button>
+    <button class="btn" id="shareBtn"><span class="ico">🔗</span>Share</button>
+    <button class="btn" id="resetBtn"><span class="ico">🎯</span>Reset</button>
   </div>
 </div>
 
 <div id="menuOverlay" class="modal-overlay hidden">
   <div class="menu-panel">
-    <div style="text-align:center;font-weight:600;padding-bottom:6px;">مینو</div>
-    <button class="menu-item" id="mThumbs">📄 صفحہ جھلکیاں</button>
-    <button class="menu-item" id="mSearch">🔍 متن میں تلاش</button>
-    <button class="menu-item" id="mBookmarks">📌 بک مارکس</button>
-    <button class="menu-item" id="mDark">🌙 ڈارک موڈ</button>
-    <button class="menu-item" id="mDir">↔ سمت (RTL/LTR)</button>
-    <button class="menu-item" id="mBook">📂 کتاب تبدیل کریں</button>
-    <button class="menu-item" id="mInstall" style="display:none">📱 ایپ انسٹال کریں</button>
-    <button class="menu-item" id="mClose" style="color:#e55">✖ بند کریں</button>
+    <div style="text-align:center;font-weight:600;padding-bottom:6px;">Menu</div>
+    <button class="menu-item" id="mThumbs">📄 Thumbnails</button>
+    <button class="menu-item" id="mSearch">🔍 Search Text</button>
+    <button class="menu-item" id="mBookmarks">📌 Bookmarks</button>
+    <button class="menu-item" id="mDark">🌙 Dark Mode</button>
+    <button class="menu-item" id="mDir">↔ Direction (RTL/LTR)</button>
+    <button class="menu-item" id="mBook">📂 Change Book</button>
+    <button class="menu-item" id="mInstall" style="display:none">📱 Install App</button>
+    <button class="menu-item" id="mClose" style="color:#e55">✖ Close</button>
   </div>
 </div>
 
 <div id="thumbsOverlay" class="modal-overlay hidden">
   <div class="full-panel">
-    <div class="modal-head"><span>📄 صفحہ جھلکیاں</span><button class="icon-btn" id="thumbsClose">✖</button></div>
+    <div class="modal-head"><span>📄 Thumbnails</span><button class="icon-btn" id="thumbsClose">✖</button></div>
     <div class="thumbs-grid" id="thumbsGrid"></div>
   </div>
 </div>
 
 <div id="searchOverlay" class="modal-overlay hidden">
   <div class="full-panel">
-    <div class="modal-head"><span>🔍 متن میں تلاش</span><button class="icon-btn" id="searchClose">✖</button></div>
+    <div class="modal-head"><span>🔍 Search Text</span><button class="icon-btn" id="searchClose">✖</button></div>
     <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="متن میں تلاش (2+ حروف)">
+      <input type="text" id="searchInput" placeholder="Search text (2+ chars)">
       <button class="icon-btn" id="searchGo">🔍</button>
     </div>
     <div class="search-status" id="searchStatus"></div>
@@ -218,12 +217,12 @@ body.dark #loader{background:rgba(26,31,40,.94);}
 
 <div id="bmOverlay" class="modal-overlay hidden">
   <div class="full-panel">
-    <div class="modal-head"><span>📌 بک مارکس</span><button class="icon-btn" id="bmClose">✖</button></div>
+    <div class="modal-head"><span>📌 Bookmarks</span><button class="icon-btn" id="bmClose">✖</button></div>
     <div class="bm-list" id="bmList"></div>
   </div>
 </div>
 
-<div id="loader"><div class="spin">لوڈ…</div></div>
+<div id="loader"><div class="spin">Loading…</div></div>
 <div id="toast"></div>
 <div id="errBox"></div>
 
@@ -244,7 +243,7 @@ const stage=document.getElementById('stage'), pageWrap=document.getElementById('
 let pdfDoc=null, pageNum=1, pageCount=0;
 let cssW=0, cssH=0, zoom=1, panX=0, panY=0;
 let renderTask=null, highlightMode=false, hlColor='rgba(255,214,10,.45)';
-let dirMode=localStorage.getItem('bk_dir')||'rtl';
+let dirMode=localStorage.getItem('bk_dir')||'ltr';
 let darkMode=localStorage.getItem('bk_dark')==='1';
 let highlights={}, bookmarks=[];
 let deferredPrompt=null;
@@ -257,14 +256,14 @@ function applyDark(){
   document.body.classList.toggle('dark', darkMode);
   const el=document.getElementById('mDark');
   el.classList.toggle('on', darkMode);
-  el.textContent = darkMode ? '☀️ لائٹ موڈ' : '🌙 ڈارک موڈ';
+  el.textContent = darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
   document.querySelector('meta[name="theme-color"]').setAttribute('content', darkMode ? '#1a1f28' : '#e0e5ec');
 }
 applyDark();
 
 function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastEl._t);
   toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1800);}
-function showLoader(m){loader.innerHTML='<div class="spin">'+(m||'لوڈ…')+'</div>';loader.classList.remove('hide');}
+function showLoader(m){loader.innerHTML='<div class="spin">'+(m||'Loading…')+'</div>';loader.classList.remove('hide');}
 function hideLoader(){loader.classList.add('hide');}
 function showError(m){loader.innerHTML='<div style="max-width:90vw;text-align:center;font-size:13px;line-height:1.8">'+m+'</div>';
   loader.classList.remove('hide');}
@@ -368,8 +367,8 @@ function updateBookmarkUI(){
 }
 function toggleBookmark(){
   const idx=bookmarks.indexOf(pageNum);
-  if(idx>=0){bookmarks.splice(idx,1);toast('بک مارک ہٹا');}
-  else{bookmarks.push(pageNum);bookmarks.sort((a,b)=>a-b);toast('بک مارک لگا');}
+  if(idx>=0){bookmarks.splice(idx,1);toast('Bookmark removed');}
+  else{bookmarks.push(pageNum);bookmarks.sort((a,b)=>a-b);toast('Bookmark added');}
   saveBookmarks(); updateBookmarkUI();
 }
 
@@ -393,7 +392,7 @@ async function getBookSource(){
 }
 
 async function loadBook(){
-  showLoader('PDF لوڈ ہو رہی ہے…');
+  showLoader('Loading PDF...');
   try{
     const src=await getBookSource();
     if(!src){
@@ -403,13 +402,12 @@ async function loadBook(){
     }
     let doc;
     
-    // 🔥 YAHAN HAI SPEED OPTIMIZATION 🔥
     if(src.type==='url'){
       doc=await pdfjsLib.getDocument({
         url: src.url,
-        disableAutoFetch: true,       // Ek sath puri file download nahi hogi
-        disableStream: false,         // Streaming on rahegi
-        rangeChunkSize: 1024 * 512    // 512KB ke chunks mein data load hoga
+        disableAutoFetch: true,
+        disableStream: false,
+        rangeChunkSize: 1024 * 512
       }).promise;
     } else {
       const buf=await src.blob.arrayBuffer();
@@ -418,14 +416,14 @@ async function loadBook(){
     
     pdfDoc=doc; pageCount=doc.numPages; slider.max=pageCount;
     await loadHighlights(); await loadBookmarks();
-    showLoader('پہلا صفحہ…');
+    showLoader('Rendering first page...');
     await new Promise(r=>setTimeout(r,100));
     await renderPage(1);
     hideLoader();
-    toast('کتاب لوڈ ('+pageCount+' صفحات)');
+    toast('Book loaded ('+pageCount+' pages)');
   }catch(e){
     console.error('Load failed:', e);
-    showError('PDF لوڈ نہیں ہو سکی<br><br><small style="color:#c00;font-size:11px;word-break:break-all">'+((e&&e.message)||e)+'</small>');
+    showError('PDF could not be loaded<br><br><small style="color:#c00;font-size:11px;word-break:break-all">'+((e&&e.message)||e)+'</small>');
     showErr('Load: '+((e&&e.message)||e));
   }
 }
@@ -434,15 +432,15 @@ async function init(){
   const m=await detectMode();
   console.log('[mode]', m);
   if(m==='static'){
-    document.getElementById('upHint').textContent='براؤزر میں محفوظ ہوگی (اسی ڈیوائس پر)';
-    document.getElementById('upHint2').textContent='💾 IndexedDB میں محفوظ — براؤزر ڈیٹا صاف کرنے تک';
+    document.getElementById('upHint').textContent='Will be saved in browser (on this device)';
+    document.getElementById('upHint2').textContent='💾 Saved in IndexedDB — until browser data is cleared';
   }
   await loadBook();
 }
 
 document.getElementById('fileInput').addEventListener('change', async e=>{
   const file=e.target.files[0]; if(!file) return;
-  if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){alert('صرف PDF');return;}
+  if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){alert('Select PDF only');return;}
   
   const info=document.getElementById('uploadInfo'), prog=document.getElementById('uploadProgress'), bar=prog.firstElementChild;
   prog.classList.add('show'); bar.style.width='30%';
@@ -451,12 +449,12 @@ document.getElementById('fileInput').addEventListener('change', async e=>{
   
   if(MODE==='server'){
     try{
-      info.textContent='اپلوڈ ہو رہی ہے… (سرور)';
+      info.textContent='Uploading... (Server)';
       const resp=await fetch('upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});
       if(resp.ok){
         uploadedToServer = true;
         bar.style.width='100%';
-        info.textContent='✓ محفوظ (سرور)';
+        info.textContent='✓ Saved (Server)';
       } else {
         throw new Error('HTTP '+resp.status);
       }
@@ -467,13 +465,13 @@ document.getElementById('fileInput').addEventListener('change', async e=>{
   
   if(!uploadedToServer){
     try{
-      info.textContent='محفوظ ہو رہی ہے… (براؤزر)';
+      info.textContent='Saving... (Browser)';
       await idbPut('book', file);
       bar.style.width='100%';
-      info.textContent='✓ محفوظ (براؤزر) — '+Math.round(file.size/1024)+' KB';
+      info.textContent='✓ Saved (Browser) — '+Math.round(file.size/1024)+' KB';
     } catch(err){
       console.error(err);
-      info.textContent='✗ ناکام: '+err.message;
+      info.textContent='✗ Failed: '+err.message;
       prog.classList.remove('show'); bar.style.width='0';
       showErr('Upload: '+err.message);
       return;
@@ -564,7 +562,7 @@ function goTo(n,forward){
 document.getElementById('prevBtn').onclick=()=>goTo(pageNum-1,false);
 document.getElementById('nextBtn').onclick=()=>goTo(pageNum+1,true);
 slider.addEventListener('change',()=>goTo(parseInt(slider.value,10)));
-pill.addEventListener('click',()=>{const v=prompt('صفحہ (1 - '+pageCount+')',pageNum);
+pill.addEventListener('click',()=>{const v=prompt('Page (1 - '+pageCount+')',pageNum);
   if(v!==null){const n=parseInt(v,10); if(!isNaN(n)) goTo(n);}});
 
 document.getElementById('zoomIn').onclick=()=>{zoom=clamp(zoom+0.35,1,5);applyTransform();};
@@ -606,26 +604,26 @@ hlBtn.onclick=()=>{highlightMode=!highlightMode;
   hlBtn.classList.toggle('on',highlightMode);
   hlCanvas.classList.toggle('active',highlightMode);
   colorBar.classList.toggle('show',highlightMode);
-  toast(highlightMode?'ہائی لائٹ آن':'ہائی لائٹ بند');};
+  toast(highlightMode?'Highlight ON':'Highlight OFF');};
 colorBar.addEventListener('click',e=>{const b=e.target.closest('.sw'); if(!b) return;
   hlColor=b.dataset.c;
   colorBar.querySelectorAll('.sw').forEach(s=>s.classList.remove('sel')); b.classList.add('sel');});
 document.getElementById('undoBtn').onclick=()=>{
   const l=highlights[pageNum];
   if(l&&l.length){l.pop(); if(!l.length) delete highlights[pageNum];
-    saveHighlights(); renderHL(); toast('انڈو');}
-  else toast('کچھ نہیں');
+    saveHighlights(); renderHL(); toast('Undone');}
+  else toast('Nothing to undo');
 };
 document.getElementById('clearBtn').onclick=()=>{
   if(highlights[pageNum]){
-    if(confirm('اس صفحے کی ہائی لائٹس صاف کریں؟')){
-      delete highlights[pageNum]; saveHighlights(); renderHL(); toast('صاف');
+    if(confirm('Clear highlights on this page?')){
+      delete highlights[pageNum]; saveHighlights(); renderHL(); toast('Cleared');
     }
-  } else toast('کچھ نہیں');
+  } else toast('Nothing to clear');
 };
 
 document.getElementById('dlBtn').onclick=async()=>{
-  if(!pdfDoc){toast('کتاب لوڈ نہیں');return;}
+  if(!pdfDoc){toast('Book not loaded');return;}
   let url=null, revoke=false;
   if(MODE==='server'){ url='book.pdf?dl='+Date.now(); }
   else {
@@ -636,11 +634,11 @@ document.getElementById('dlBtn').onclick=async()=>{
   const a=document.createElement('a'); a.href=url; a.download='book.pdf';
   document.body.appendChild(a); a.click(); a.remove();
   if(revoke) setTimeout(()=>URL.revokeObjectURL(url),1000);
-  toast('ڈاؤن لوڈ شروع…');
+  toast('Download started...');
 };
 document.getElementById('shareBtn').onclick=async()=>{
   try{
-    if(!navigator.share){toast('شیئر سپورٹ نہیں');return;}
+    if(!navigator.share){toast('Share not supported');return;}
     let files=null;
     try{
       let blob=null;
@@ -649,7 +647,7 @@ document.getElementById('shareBtn').onclick=async()=>{
       const f=new File([blob],'book.pdf',{type:'application/pdf'});
       if(navigator.canShare&&navigator.canShare({files:[f]})) files=[f];
     }catch(_){}
-    await navigator.share(files?{files,title:'اردو کتاب'}:{title:'اردو کتاب',url:location.href});
+    await navigator.share(files?{files,title:'Urdu Book'}:{title:'Urdu Book',url:location.href});
   }catch(e){}
 };
 
@@ -661,10 +659,10 @@ menuOverlay.addEventListener('click',e=>{if(e.target===menuOverlay) closeAllModa
 document.getElementById('mDark').onclick=()=>{darkMode=!darkMode;
   localStorage.setItem('bk_dark',darkMode?'1':'0'); applyDark(); closeAllModals();};
 document.getElementById('mDir').onclick=()=>{dirMode=(dirMode==='rtl')?'ltr':'rtl';
-  localStorage.setItem('bk_dir',dirMode); toast(dirMode==='rtl'?'RTL موڈ':'LTR موڈ'); closeAllModals();};
+  localStorage.setItem('bk_dir',dirMode); toast(dirMode==='rtl'?'RTL Mode':'LTR Mode'); closeAllModals();};
 document.getElementById('mBook').onclick=async()=>{
   closeAllModals();
-  if(!confirm('موجودہ کتاب ہٹا کر نئی منتخب کریں؟')) return;
+  if(!confirm('Remove current book and select a new one?')) return;
   if(MODE==='server'){ try{await fetch('delete',{method:'POST'});}catch(e){} }
   else { try{await idbDel('book');}catch(e){} }
   pdfDoc=null; pageCount=0; highlights={}; bookmarks=[];
@@ -681,12 +679,12 @@ function openBookmarksList(){
   const list=document.getElementById('bmList');
   list.innerHTML='';
   if(bookmarks.length===0){
-    list.innerHTML='<div class="empty-msg">کوئی بک مارک نہیں<br>📑 بٹن سے موجودہ صفحہ محفوظ کریں</div>';
+    list.innerHTML='<div class="empty-msg">No bookmarks<br>📑 Save current page with the button</div>';
   } else {
     bookmarks.forEach(p=>{
       const div=document.createElement('div');
       div.className='bm-item';
-      div.innerHTML=`<span>📌 صفحہ ${p}</span><span class="del">✖</span>`;
+      div.innerHTML=`<span>📌 Page ${p}</span><span class="del">✖</span>`;
       div.onclick=(e)=>{
         if(e.target.classList.contains('del')){
           bookmarks=bookmarks.filter(x=>x!==p);
@@ -708,7 +706,7 @@ async function openThumbnails(){
   closeAllModals();
   const grid=document.getElementById('thumbsGrid');
   grid.innerHTML='';
-  if(!pdfDoc){toast('کتاب لوڈ نہیں');return;}
+  if(!pdfDoc){toast('Book not loaded');return;}
   const overlay=document.getElementById('thumbsOverlay');
   overlay.classList.remove('hidden');
   for(let i=1;i<=pageCount;i++){
@@ -747,14 +745,14 @@ document.getElementById('thumbsOverlay').addEventListener('click',e=>{
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function doSearch(){
   const q=document.getElementById('searchInput').value.trim();
-  if(q.length<2){toast('کم از کم 2 حروف');return;}
+  if(q.length<2){toast('At least 2 characters');return;}
   const status=document.getElementById('searchStatus'), results=document.getElementById('searchResults');
   results.innerHTML='';
-  if(!pdfDoc){status.textContent='کتاب لوڈ نہیں';return;}
+  if(!pdfDoc){status.textContent='Book not loaded';return;}
   const qLower=q.toLowerCase();
   const hits=[]; let totalText=0;
   for(let i=1;i<=pageCount;i++){
-    status.textContent=`صفحہ ${i} / ${pageCount} چیک...`;
+    status.textContent=`Checking page ${i} / ${pageCount}...`;
     try{
       const page=await pdfDoc.getPage(i);
       const tc=await page.getTextContent();
@@ -768,15 +766,15 @@ async function doSearch(){
     }catch(e){}
   }
   if(hits.length===0){
-    if(totalText<pageCount*10) status.textContent='⚠ یہ scanned (تصویری) PDF ہے — متن تلاش نہیں ہو سکتا';
-    else status.textContent=`کوئی نتیجہ نہیں (${pageCount} صفحات)`;
+    if(totalText<pageCount*10) status.textContent='⚠ This is a scanned PDF — text cannot be searched';
+    else status.textContent=`No results (${pageCount} pages)`;
     return;
   }
-  status.textContent=`${hits.length} نتائج`;
+  status.textContent=`${hits.length} results`;
   hits.forEach(h=>{
     const div=document.createElement('div');
     div.className='search-hit';
-    div.innerHTML=`<b>صفحہ ${h.page}</b><div>${escapeHtml(h.snippet)}</div>`;
+    div.innerHTML=`<b>Page ${h.page}</b><div>${escapeHtml(h.snippet)}</div>`;
     div.onclick=()=>{goTo(h.page); closeAllModals();};
     results.appendChild(div);
   });
@@ -813,10 +811,10 @@ window.addEventListener('beforeinstallprompt', e=>{
 });
 document.getElementById('mInstall').onclick=async()=>{
   closeAllModals();
-  if(!deferredPrompt){toast('براؤزر انسٹال سپورٹ نہیں');return;}
+  if(!deferredPrompt){toast('Browser install not supported');return;}
   deferredPrompt.prompt();
   const r=await deferredPrompt.userChoice;
-  if(r.outcome==='accepted') toast('ایپ انسٹال!');
+  if(r.outcome==='accepted') toast('App Installed!');
   deferredPrompt=null;
   document.getElementById('mInstall').style.display='none';
 };
