@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#e0e5ec">
+<title>اردو کتاب — Reader</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e0e5ec;--light:#fff;--dark:#a3b1c6;--text:#39445a;--muted:#7b8798;--accent:#5b6ef5;--panel:#fff;--shadow:rgba(163,177,198,.55);}
+body.dark{--bg:#1a1f28;--light:#252b36;--dark:#0e1219;--text:#d8dfea;--muted:#8a94a8;--accent:#7b8fff;--panel:#252b36;--shadow:rgba(0,0,0,.6);}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Nastaliq Urdu','Jameel Noori Nastaleeq',system-ui,sans-serif;
+  display:flex;flex-direction:column;height:100dvh;user-select:none;-webkit-user-select:none;transition:background .3s,color .3s;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;z-index:30;}
+.pill{font-size:11px;padding:7px 14px;border-radius:999px;cursor:pointer;
+  box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);color:var(--muted);white-space:nowrap;}
+.title{flex:1;text-align:center;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.icon-btn{border:none;background:var(--bg);color:var(--text);height:38px;min-width:38px;padding:0 8px;border-radius:11px;
+  font-size:15px;font-family:inherit;cursor:pointer;
+  box-shadow:4px 4px 8px var(--dark),-4px -4px 8px var(--light);transition:.12s;
+  position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.icon-btn:active{box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);transform:scale(.95);}
+.icon-btn.active{color:var(--accent);box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);}
+.icon-btn .badge{position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;font-size:9px;padding:1px 5px;border-radius:999px;font-weight:700;line-height:1.3;}
+
+/* STAGE */
+#stage{flex:1;position:relative;overflow:hidden;display:grid;place-items:center;touch-action:none;min-height:200px;}
+#pageWrap{position:relative;border-radius:12px;background:#fff;
+  box-shadow:14px 14px 30px var(--shadow),-14px -14px 30px var(--light);transform-origin:center center;will-change:transform;}
+#pageWrap::after{content:'';position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  background:linear-gradient(to left,rgba(0,0,0,.08),rgba(0,0,0,0) 10%);}
+#pageInner{position:relative;width:100%;height:100%;border-radius:12px;overflow:hidden;}
+#pdfCanvas{display:block;}
+#hlCanvas{position:absolute;inset:0;pointer-events:none;}
+#hlCanvas.active{pointer-events:auto;cursor:crosshair;}
+
+@keyframes turnNext{from{opacity:0;transform:translateX(28px) scale(.985);}to{opacity:1;transform:none;}}
+@keyframes turnPrev{from{opacity:0;transform:translateX(-28px) scale(.985);}to{opacity:1;transform:none;}}
+.turn-next{animation:turnNext .28s cubic-bezier(.2,.9,.3,1);}
+.turn-prev{animation:turnPrev .28s cubic-bezier(.2,.9,.3,1);}
+
+/* PANEL */
+.panel{background:var(--bg);padding:10px 12px 16px;border-radius:24px 24px 0 0;z-index:30;
+  box-shadow:0 -8px 20px var(--shadow);padding-bottom:calc(16px + env(safe-area-inset-bottom));}
+.slider{-webkit-appearance:none;width:100%;height:8px;border-radius:999px;background:var(--bg);outline:none;margin:4px 0 12px;
+  box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--bg);cursor:pointer;
+  box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light),inset 0 0 0 3px var(--accent);}
+.colorbar{display:none;justify-content:center;gap:14px;padding:0 0 12px;}
+.colorbar.show{display:flex;}
+.sw{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+  box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);}
+.sw.sel{outline:2.5px solid var(--accent);outline-offset:2px;}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.btn{border:none;background:var(--bg);color:var(--text);border-radius:14px;padding:9px 2px 7px;font-size:9.5px;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  box-shadow:4px 4px 8px var(--dark),-4px -4px 8px var(--light);transition:.12s;}
+.btn:active{box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);transform:scale(.95);}
+.btn.on{color:var(--accent);box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);}
+.btn .ico{font-size:16px;line-height:1.1;}
+
+/* LOADER / TOAST / ERR */
+#loader{position:fixed;inset:0;background:rgba(224,229,236,.94);display:grid;place-items:center;z-index:100;transition:opacity .35s;padding:20px;text-align:center;}
+body.dark #loader{background:rgba(26,31,40,.94);}
+#loader.hide{opacity:0;pointer-events:none;}
+.spin{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;font-size:11px;
+  box-shadow:6px 6px 14px var(--dark),-6px -6px 14px var(--light);animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(.92);}}
+#toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg);
+  padding:10px 20px;border-radius:14px;font-size:12px;
+  box-shadow:6px 6px 14px var(--dark),-6px -6px 14px var(--light);
+  opacity:0;pointer-events:none;transition:.25s;z-index:200;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#errBox{position:fixed;left:8px;right:8px;bottom:8px;background:#1a1a1a;color:#ff8080;font:11px/1.4 monospace;
+  padding:8px 10px;border-radius:10px;max-height:32vh;overflow:auto;display:none;z-index:999;white-space:pre-wrap;word-break:break-all;}
+#errBox.show{display:block;}
+
+/* UPLOAD SCREEN */
+#uploadScreen{position:fixed;inset:0;z-index:150;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;}
+#uploadScreen.hidden{display:none;}
+.uploadCard{background:var(--bg);border-radius:24px;padding:32px 24px;max-width:400px;width:100%;text-align:center;
+  box-shadow:14px 14px 30px var(--dark),-14px -14px 30px var(--light);}
+.uploadCard h1{margin:0 0 8px;font-size:22px;font-weight:600;}
+.uploadCard p{margin:0 0 24px;color:var(--muted);font-size:13px;line-height:1.6;}
+.uploadBtn{display:inline-block;padding:16px 28px;border-radius:16px;cursor:pointer;background:var(--bg);color:var(--text);
+  font-family:inherit;font-size:15px;font-weight:600;
+  box-shadow:6px 6px 14px var(--dark),-6px -6px 14px var(--light);transition:.15s;}
+.uploadBtn:active{box-shadow:inset 4px 4px 8px var(--dark),inset -4px -4px 8px var(--light);transform:scale(.97);}
+.uploadInfo{margin-top:16px;font-size:12px;color:var(--muted);min-height:20px;}
+.uploadProgress{margin-top:16px;height:8px;border-radius:999px;overflow:hidden;background:var(--bg);
+  box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);display:none;}
+.uploadProgress.show{display:block;}
+.uploadProgress > div{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#5b6ef5,#8a9bff);transition:width .3s;}
+.hint{margin-top:20px;font-size:11px;color:var(--muted);line-height:1.7;}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);}
+.modal-overlay.hidden{display:none;}
+.full-panel{background:var(--bg);border-radius:20px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;
+  box-shadow:14px 14px 30px rgba(0,0,0,.4),-14px -14px 30px rgba(255,255,255,.05);}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--dark);font-weight:600;}
+.menu-panel{background:var(--bg);border-radius:20px;width:100%;max-width:340px;padding:16px;
+  box-shadow:14px 14px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:8px;}
+.menu-item{border:none;background:var(--bg);color:var(--text);font-family:inherit;font-size:13px;
+  padding:12px 14px;border-radius:12px;text-align:right;cursor:pointer;
+  box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);display:flex;align-items:center;gap:10px;transition:.15s;}
+.menu-item:active{box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);transform:scale(.98);}
+.menu-item.on{color:var(--accent);}
+
+/* THUMBNAILS */
+.thumbs-grid{overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;}
+.thumb-item{background:var(--bg);border-radius:10px;padding:6px;cursor:pointer;
+  box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);transition:.15s;}
+.thumb-item:active{transform:scale(.95);}
+.thumb-item.current{outline:2.5px solid var(--accent);}
+.thumb-canvas-wrap{aspect-ratio:3/4;background:#fff;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.thumb-canvas-wrap canvas{max-width:100%;max-height:100%;display:block;}
+.thumb-num{text-align:center;font-size:11px;margin-top:4px;color:var(--muted);}
+
+/* SEARCH */
+.search-bar{display:flex;gap:8px;padding:12px 16px;}
+.search-bar input{flex:1;padding:12px 14px;border-radius:12px;border:none;background:var(--bg);color:var(--text);font-family:inherit;font-size:14px;
+  box-shadow:inset 3px 3px 6px var(--dark),inset -3px -3px 6px var(--light);outline:none;}
+.search-status{padding:8px 16px;font-size:12px;color:var(--muted);min-height:20px;}
+.search-results{overflow-y:auto;padding:0 12px 12px;max-height:50vh;}
+.search-hit{padding:10px 12px;border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13px;line-height:1.7;
+  background:var(--bg);box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);}
+.search-hit:active{transform:scale(.98);}
+.search-hit b{color:var(--accent);display:block;margin-bottom:4px;font-size:12px;}
+
+/* BOOKMARKS */
+.bm-list{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.bm-item{padding:12px 14px;border-radius:12px;cursor:pointer;background:var(--bg);font-size:13px;
+  box-shadow:3px 3px 6px var(--dark),-3px -3px 6px var(--light);display:flex;justify-content:space-between;align-items:center;}
+.bm-item:active{transform:scale(.98);}
+.bm-item .del{color:#e55;font-size:18px;padding:0 8px;}
+.empty-msg{padding:32px;text-align:center;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- UPLOAD SCREEN -->
+<div id="uploadScreen" class="hidden">
+  <div class="uploadCard">
+    <h1>📖 اردو کتاب</h1>
+    <p>PDF منتخب کریں<br>سرور کے <b>upload/</b> فولڈر میں محفوظ ہوگی</p>
+    <label class="uploadBtn">
+      <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden>
+      <span>📂 PDF منتخب کریں</span>
+    </label>
+    <div id="uploadInfo" class="uploadInfo"></div>
+    <div id="uploadProgress" class="uploadProgress"><div></div></div>
+    <div class="hint">💾 فائل سرور پر محفوظ ہوتی ہے</div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="pill" id="pill">— / —</div>
+  <div class="title">اردو کتاب</div>
+  <button class="icon-btn" id="bmBtn" title="Bookmark">📑<span class="badge" id="bmCount" style="display:none">0</span></button>
+  <button class="icon-btn" id="menuBtn" title="Menu">☰</button>
+</div>
+
+<!-- STAGE -->
+<div id="stage">
+  <div id="pageWrap">
+    <div id="pageInner">
+      <canvas id="pdfCanvas"></canvas>
+      <canvas id="hlCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM PANEL -->
+<div class="panel">
+  <input class="slider" id="slider" type="range" min="1" max="1" value="1">
+  <div class="colorbar" id="colorBar">
+    <button class="sw sel" data-c="rgba(255,214,10,.45)" style="background:rgba(255,214,10,.75)"></button>
+    <button class="sw" data-c="rgba(76,222,128,.40)" style="background:rgba(76,222,128,.7)"></button>
+    <button class="sw" data-c="rgba(255,110,180,.40)" style="background:rgba(255,110,180,.7)"></button>
+    <button class="sw" data-c="rgba(90,170,255,.40)" style="background:rgba(90,170,255,.7)"></button>
+    <button class="sw" data-c="rgba(255,150,60,.45)" style="background:rgba(255,150,60,.75)"></button>
+  </div>
+  <div class="tools">
+    <button class="btn" id="prevBtn"><span class="ico">◀</span>پچھلا</button>
+    <button class="btn" id="nextBtn"><span class="ico">▶</span>اگلا</button>
+    <button class="btn" id="zoomOut"><span class="ico">➖</span>چھوٹا</button>
+    <button class="btn" id="zoomIn"><span class="ico">➕</span>بڑا</button>
+    <button class="btn" id="hlBtn"><span class="ico">🖍</span>ہائی لائٹ</button>
+    <button class="btn" id="undoBtn"><span class="ico">↶</span>انڈو</button>
+    <button class="btn" id="clearBtn"><span class="ico">🧹</span>صاف</button>
+    <button class="btn" id="dlBtn"><span class="ico">⬇</span>ڈاؤن لوڈ</button>
+    <button class="btn" id="shareBtn"><span class="ico">🔗</span>شیئر</button>
+    <button class="btn" id="resetBtn"><span class="ico">🎯</span>ری سیٹ</button>
+  </div>
+</div>
+
+<!-- MENU -->
+<div id="menuOverlay" class="modal-overlay hidden">
+  <div class="menu-panel">
+    <div style="text-align:center;font-weight:600;padding-bottom:6px;">مینو</div>
+    <button class="menu-item" id="mThumbs">📄 صفحہ جھلکیاں (Thumbnails)</button>
+    <button class="menu-item" id="mSearch">🔍 متن میں تلاش (Search)</button>
+    <button class="menu-item" id="mBookmarks">📌 بک مارکس دیکھیں</button>
+    <button class="menu-item" id="mDark">🌙 ڈارک موڈ</button>
+    <button class="menu-item" id="mDir">↔ سمت (RTL / LTR)</button>
+    <button class="menu-item" id="mBook">📂 کتاب تبدیل کریں</button>
+    <button class="menu-item" id="mInstall" style="display:none">📱 ایپ انسٹال کریں</button>
+    <button class="menu-item" id="mClose" style="color:#e55">✖ بند کریں</button>
+  </div>
+</div>
+
+<!-- THUMBNAILS -->
+<div id="thumbsOverlay" class="modal-overlay hidden">
+  <div class="full-panel">
+    <div class="modal-head">
+      <span>📄 صفحہ جھلکیاں</span>
+      <button class="icon-btn" id="thumbsClose">✖</button>
+    </div>
+    <div class="thumbs-grid" id="thumbsGrid"></div>
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div id="searchOverlay" class="modal-overlay hidden">
+  <div class="full-panel">
+    <div class="modal-head">
+      <span>🔍 متن میں تلاش</span>
+      <button class="icon-btn" id="searchClose">✖</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="متن میں تلاش کریں (کم از کم 2 حروف)">
+      <button class="icon-btn" id="searchGo">🔍</button>
+    </div>
+    <div class="search-status" id="searchStatus"></div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</div>
+
+<!-- BOOKMARKS LIST -->
+<div id="bmOverlay" class="modal-overlay hidden">
+  <div class="full-panel">
+    <div class="modal-head">
+      <span>📌 بک مارکس</span>
+      <button class="icon-btn" id="bmClose">✖</button>
+    </div>
+    <div class="bm-list" id="bmList"></div>
+  </div>
+</div>
+
+<div id="loader"><div class="spin">لوڈ…</div></div>
+<div id="toast"></div>
+<div id="errBox"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+const BOOK_URL='/book.pdf', UP_URL='/upload', DEL_URL='/delete', STATUS_URL='/status',
+      HL_URL='/highlights', BM_URL='/bookmarks';
+const stage=document.getElementById('stage'), pageWrap=document.getElementById('pageWrap'),
+      pageInner=document.getElementById('pageInner'),
+      pdfCanvas=document.getElementById('pdfCanvas'), hlCanvas=document.getElementById('hlCanvas'),
+      pdfCtx=pdfCanvas.getContext('2d'), hlCtx=hlCanvas.getContext('2d'),
+      loader=document.getElementById('loader'), toastEl=document.getElementById('toast'),
+      pill=document.getElementById('pill'), slider=document.getElementById('slider'),
+      colorBar=document.getElementById('colorBar'),
+      uploadScreen=document.getElementById('uploadScreen'), errBox=document.getElementById('errBox');
+
+let pdfDoc=null, pageNum=1, pageCount=0;
+let cssW=0, cssH=0, zoom=1, panX=0, panY=0;
+let renderTask=null, highlightMode=false, hlColor='rgba(255,214,10,.45)';
+let dirMode=localStorage.getItem('bk_dir')||'rtl';
+let darkMode=localStorage.getItem('bk_dark')==='1';
+let highlights={};
+let bookmarks=[];
+let deferredPrompt=null;
+
+const MAX_CANVAS_SIDE=3800;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- Dark mode ---------- */
+function applyDark(){
+  document.body.classList.toggle('dark', darkMode);
+  document.getElementById('mDark').classList.toggle('on', darkMode);
+  document.getElementById('mDark').textContent = darkMode ? '☀️ لائٹ موڈ' : '🌙 ڈارک موڈ';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', darkMode ? '#1a1f28' : '#e0e5ec');
+}
+applyDark();
+
+/* ---------- Toast/Err/Loader ---------- */
+function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastEl._t);
+  toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1800);}
+function showLoader(m){loader.innerHTML='<div class="spin">'+(m||'لوڈ…')+'</div>';loader.classList.remove('hide');}
+function hideLoader(){loader.classList.add('hide');}
+function showError(m){loader.innerHTML='<div style="max-width:90vw;text-align:center;font-size:13px;line-height:1.8">'+m+'</div>';
+  loader.classList.remove('hide');}
+function showErr(msg){errBox.textContent='⚠ '+msg;errBox.classList.add('show');
+  setTimeout(()=>{if(errBox.textContent.startsWith('⚠ '+msg.slice(0,20))) errBox.classList.remove('show');}, 8000);}
+window.addEventListener('error', e=>{console.error(e);showErr((e.message||'')+' @ '+(e.filename||'')+':'+(e.lineno||''));});
+window.addEventListener('unhandledrejection', e=>{console.error('Reject:',e.reason);
+  showErr('Promise: '+((e.reason&&e.reason.message)||e.reason||'?'));});
+
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ---------- Highlights sync ---------- */
+function renderHL(){
+  const w=hlCanvas.width, h=hlCanvas.height;
+  hlCtx.clearRect(0,0,w,h);
+  const list=highlights[pageNum]||[];
+  list.forEach(r=>{
+    hlCtx.fillStyle=r.c;
+    hlCtx.fillRect(r.x*w,r.y*h,r.w*w,r.h*h);
+  });
+}
+let hlSaveTimer;
+function saveHighlightsServer(){
+  clearTimeout(hlSaveTimer);
+  hlSaveTimer=setTimeout(async()=>{
+    try{
+      await fetch(HL_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(highlights)});
+    }catch(e){console.warn('HL save fail',e);}
+  }, 600);
+  try{localStorage.setItem('bk_hl',JSON.stringify(highlights));}catch(e){}
+}
+async function loadHighlights(){
+  try{
+    const r=await fetch(HL_URL+'?t='+Date.now(),{cache:'no-store'});
+    const data=await r.json();
+    if(data && typeof data==='object'){ highlights=data; }
+  }catch(e){
+    try{highlights=JSON.parse(localStorage.getItem('bk_hl')||'{}');}catch(_){highlights={};}
+  }
+}
+
+/* ---------- Bookmarks sync ---------- */
+let bmSaveTimer;
+function saveBookmarksServer(){
+  clearTimeout(bmSaveTimer);
+  bmSaveTimer=setTimeout(async()=>{
+    try{
+      await fetch(BM_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(bookmarks)});
+    }catch(e){console.warn('BM save fail',e);}
+  }, 600);
+  try{localStorage.setItem('bk_bm',JSON.stringify(bookmarks));}catch(e){}
+}
+async function loadBookmarks(){
+  try{
+    const r=await fetch(BM_URL+'?t='+Date.now(),{cache:'no-store'});
+    const data=await r.json();
+    if(Array.isArray(data)){ bookmarks=data; }
+  }catch(e){
+    try{bookmarks=JSON.parse(localStorage.getItem('bk_bm')||'[]');}catch(_){bookmarks=[];}
+  }
+  updateBookmarkUI();
+}
+
+function updateBookmarkUI(){
+  const btn=document.getElementById('bmBtn');
+  const badge=document.getElementById('bmCount');
+  const has=bookmarks.includes(pageNum);
+  btn.classList.toggle('active', has);
+  if(bookmarks.length>0){
+    badge.textContent=bookmarks.length;
+    badge.style.display='inline-block';
+  } else badge.style.display='none';
+}
+function toggleBookmark(){
+  const idx=bookmarks.indexOf(pageNum);
+  if(idx>=0){bookmarks.splice(idx,1);toast('بک مارک ہٹا دیا');}
+  else{bookmarks.push(pageNum);bookmarks.sort((a,b)=>a-b);toast('بک مارک لگا دیا');}
+  saveBookmarksServer();
+  updateBookmarkUI();
+}
+
+/* ---------- Load book ---------- */
+async function loadBookFromServer(){
+  showLoader('PDF لوڈ ہو رہی ہے…');
+  try{
+    const url=BOOK_URL+'?t='+Date.now();
+    const doc=await pdfjsLib.getDocument({url,disableAutoFetch:false,disableStream:false}).promise;
+    pdfDoc=doc; pageCount=doc.numPages; slider.max=pageCount;
+    await loadHighlights();
+    await loadBookmarks();
+    showLoader('پہلا صفحہ بن رہا ہے…');
+    await new Promise(r=>setTimeout(r,100));
+    await renderPage(1);
+    hideLoader();
+    toast('کتاب لوڈ ('+pageCount+' صفحات)');
+  }catch(e){
+    console.error('PDF load failed:', e);
+    showError('PDF لوڈ نہیں ہو سکی<br><br><small style="color:#c00;font-size:11px;word-break:break-all">'+((e&&e.message)||e)+'</small>');
+    showErr('Load: '+((e&&e.message)||e));
+  }
+}
+
+async function init(){
+  try{
+    const r=await fetch(STATUS_URL+'?t='+Date.now(),{cache:'no-store'});
+    const st=await r.json();
+    if(st.exists && st.size>0){ await loadBookFromServer(); return; }
+  }catch(e){ console.warn('status failed',e); }
+  hideLoader();
+  uploadScreen.classList.remove('hidden');
+}
+
+/* ---------- Upload ---------- */
+document.getElementById('fileInput').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  if(!/\.pdf$/i.test(file.name) && file.type!=='application/pdf'){alert('صرف PDF منتخب کریں');return;}
+  const info=document.getElementById('uploadInfo'), prog=document.getElementById('uploadProgress'), bar=prog.firstElementChild;
+  info.textContent='اپلوڈ ہو رہی ہے… ('+Math.round(file.size/1024)+' KB)';
+  prog.classList.add('show'); bar.style.width='20%';
+  try{
+    const resp=await fetch(UP_URL,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    bar.style.width='100%';
+    const j=await resp.json();
+    info.textContent='✓ محفوظ: '+Math.round(j.size/1024)+' KB';
+    await new Promise(r=>setTimeout(r,500));
+    uploadScreen.classList.add('hidden');
+    await loadBookFromServer();
+  }catch(err){
+    console.error(err);
+    info.textContent='✗ اپلوڈ ناکام — '+err.message;
+    prog.classList.remove('show'); bar.style.width='0';
+    showErr('Upload: '+err.message);
+  }
+});
+
+/* ---------- Render ---------- */
+async function renderPage(n, keepView){
+  if(!pdfDoc) return;
+  n=clamp(n,1,pageCount); pageNum=n;
+  if(renderTask){try{renderTask.cancel();}catch(e){}renderTask=null;}
+  try{
+    const page=await pdfDoc.getPage(n);
+    const base=page.getViewport({scale:1});
+    if(stage.clientWidth<50||stage.clientHeight<50) await new Promise(r=>setTimeout(r,120));
+    const sw=Math.max(100,stage.clientWidth-22), sh=Math.max(100,stage.clientHeight-22);
+    const fit=Math.min(sw/base.width, sh/base.height);
+    let dpr=Math.min(window.devicePixelRatio||1,2);
+    let scale=fit*dpr;
+    if(base.width*scale>MAX_CANVAS_SIDE || base.height*scale>MAX_CANVAS_SIDE){
+      scale=Math.min(MAX_CANVAS_SIDE/base.width, MAX_CANVAS_SIDE/base.height);
+    }
+    const vpHi=page.getViewport({scale});
+    pdfCanvas.width=Math.max(1,Math.floor(vpHi.width));
+    pdfCanvas.height=Math.max(1,Math.floor(vpHi.height));
+    cssW=Math.max(1,Math.floor(base.width*fit));
+    cssH=Math.max(1,Math.floor(base.height*fit));
+    pdfCanvas.style.width=cssW+'px'; pdfCanvas.style.height=cssH+'px';
+    hlCanvas.width=pdfCanvas.width; hlCanvas.height=pdfCanvas.height;
+    pageWrap.style.width=cssW+'px'; pageWrap.style.height=cssH+'px';
+    pdfCtx.clearRect(0,0,pdfCanvas.width,pdfCanvas.height);
+    renderTask=page.render({canvasContext:pdfCtx, viewport:vpHi});
+    await renderTask.promise; renderTask=null;
+    if(!keepView){zoom=1;panX=0;panY=0;}
+    applyTransform(); renderHL(); updatePager(); updateBookmarkUI();
+    pdfDoc.getPage(clamp(n+1,1,pageCount)).catch(()=>{});
+    pdfDoc.getPage(clamp(n-1,1,pageCount)).catch(()=>{});
+  }catch(e){ console.error('Render error:',e); showErr('Render: '+((e&&e.message)||e)); }
+}
+function applyTransform(){
+  if(zoom<=1.01){zoom=1;panX=0;panY=0;}
+  const mx=Math.max(0,(cssW*zoom-cssW)/2), my=Math.max(0,(cssH*zoom-cssH)/2);
+  panX=clamp(panX,-mx,mx); panY=clamp(panY,-my,my);
+  pageWrap.style.transform=`translate(${panX}px, ${panY}px) scale(${zoom})`;
+}
+function updatePager(){pill.textContent=pageNum+' / '+pageCount; slider.value=pageNum;}
+
+/* ---------- Highlights drawing ---------- */
+let drawing=false, startPt=null, previewRect=null;
+function ptFromEvent(e){const r=hlCanvas.getBoundingClientRect();
+  return {x:clamp((e.clientX-r.left)/r.width,0,1), y:clamp((e.clientY-r.top)/r.height,0,1)};}
+hlCanvas.addEventListener('pointerdown',e=>{
+  if(!highlightMode) return; e.preventDefault(); drawing=true;
+  try{hlCanvas.setPointerCapture(e.pointerId);}catch(_){}
+  startPt=ptFromEvent(e);
+});
+hlCanvas.addEventListener('pointermove',e=>{
+  if(!drawing) return;
+  const p=ptFromEvent(e);
+  previewRect={x:Math.min(startPt.x,p.x),y:Math.min(startPt.y,p.y),
+    w:Math.abs(p.x-startPt.x),h:Math.abs(p.y-startPt.y),c:hlColor};
+  renderHL();
+  const w=hlCanvas.width, h=hlCanvas.height;
+  hlCtx.fillStyle=previewRect.c;
+  hlCtx.fillRect(previewRect.x*w, previewRect.y*h, previewRect.w*w, previewRect.h*h);
+});
+function endDraw(){
+  if(!drawing) return; drawing=false;
+  if(previewRect && previewRect.w>0.004 && previewRect.h>0.004){
+    (highlights[pageNum]=highlights[pageNum]||[]).push(previewRect);
+    saveHighlightsServer();
+  }
+  previewRect=null; renderHL();
+}
+hlCanvas.addEventListener('pointerup',endDraw);
+hlCanvas.addEventListener('pointercancel',endDraw);
+hlCanvas.addEventListener('pointerleave',()=>{if(drawing)endDraw();});
+
+/* ---------- Nav ---------- */
+function goTo(n,forward){
+  n=clamp(n,1,pageCount); if(n===pageNum) return;
+  const fwd=forward!==undefined?forward:(n>pageNum);
+  pageInner.classList.remove('turn-next','turn-prev'); void pageInner.offsetWidth;
+  pageInner.classList.add(fwd?'turn-next':'turn-prev'); renderPage(n);
+}
+document.getElementById('prevBtn').onclick=()=>goTo(pageNum-1,false);
+document.getElementById('nextBtn').onclick=()=>goTo(pageNum+1,true);
+slider.addEventListener('change',()=>goTo(parseInt(slider.value,10)));
+pill.addEventListener('click',()=>{const v=prompt('صفحہ نمبر (1 - '+pageCount+')',pageNum);
+  if(v!==null){const n=parseInt(v,10); if(!isNaN(n)) goTo(n);}});
+
+/* ---------- Zoom ---------- */
+document.getElementById('zoomIn').onclick=()=>{zoom=clamp(zoom+0.35,1,5);applyTransform();};
+document.getElementById('zoomOut').onclick=()=>{zoom=clamp(zoom-0.35,1,5);applyTransform();};
+document.getElementById('resetBtn').onclick=()=>{zoom=1;panX=panY=0;applyTransform();};
+stage.addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaY)>0){e.preventDefault();
+  zoom=clamp(zoom*(e.deltaY<0?1.12:0.9),1,5);applyTransform();}},{passive:false});
+
+/* ---------- Touch ---------- */
+let touchMode=null,tStart=null,pinchD=0,pinchZ=1,panStart=null;
+const dist2=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+stage.addEventListener('touchstart',e=>{
+  if(highlightMode) return;
+  if(e.touches.length===2){touchMode='pinch';pinchD=dist2(e.touches);pinchZ=zoom;}
+  else if(e.touches.length===1){const t=e.touches[0];
+    tStart={x:t.clientX,y:t.clientY,t:Date.now()};
+    if(zoom>1){touchMode='pan';panStart={x:panX,y:panY,tx:t.clientX,ty:t.clientY};}
+    else touchMode='swipe';}
+},{passive:true});
+stage.addEventListener('touchmove',e=>{
+  if(highlightMode) return;
+  if(touchMode==='pinch'&&e.touches.length===2){e.preventDefault();
+    const d=dist2(e.touches); zoom=clamp(pinchZ*(d/pinchD),1,5); applyTransform();}
+  else if(touchMode==='pan'&&e.touches.length===1){e.preventDefault();
+    panX=panStart.x+(e.touches[0].clientX-panStart.tx);
+    panY=panStart.y+(e.touches[0].clientY-panStart.ty); applyTransform();}
+},{passive:false});
+stage.addEventListener('touchend',e=>{
+  if(touchMode==='swipe'&&tStart&&e.changedTouches.length===1){
+    const dx=e.changedTouches[0].clientX-tStart.x, dy=e.changedTouches[0].clientY-tStart.y,
+          dt=Date.now()-tStart.t;
+    if(Math.abs(dx)>55&&Math.abs(dy)<90&&dt<700){
+      const fwd=(dirMode==='rtl')?(dx>0):(dx<0);
+      fwd?goTo(pageNum+1,true):goTo(pageNum-1,false);}}
+  if(e.touches.length===0){touchMode=null;tStart=null;panStart=null;}
+},{passive:true});
+
+/* ---------- Highlight tools ---------- */
+const hlBtn=document.getElementById('hlBtn');
+hlBtn.onclick=()=>{highlightMode=!highlightMode;
+  hlBtn.classList.toggle('on',highlightMode);
+  hlCanvas.classList.toggle('active',highlightMode);
+  colorBar.classList.toggle('show',highlightMode);
+  toast(highlightMode?'ہائی لائٹ آن':'ہائی لائٹ بند');};
+colorBar.addEventListener('click',e=>{const b=e.target.closest('.sw'); if(!b) return;
+  hlColor=b.dataset.c;
+  colorBar.querySelectorAll('.sw').forEach(s=>s.classList.remove('sel')); b.classList.add('sel');});
+document.getElementById('undoBtn').onclick=()=>{
+  const l=highlights[pageNum];
+  if(l&&l.length){l.pop(); if(!l.length) delete highlights[pageNum];
+    saveHighlightsServer(); renderHL(); toast('انڈو');}
+  else toast('کچھ نہیں');
+};
+document.getElementById('clearBtn').onclick=()=>{
+  if(highlights[pageNum]){
+    if(confirm('اس صفحے کی ہائی لائٹس صاف کریں؟')){
+      delete highlights[pageNum]; saveHighlightsServer(); renderHL(); toast('صاف');
+    }
+  } else toast('کچھ نہیں');
+};
+
+/* ---------- Download / Share ---------- */
+document.getElementById('dlBtn').onclick=()=>{
+  if(!pdfDoc){toast('کتاب لوڈ نہیں');return;}
+  const a=document.createElement('a'); a.href=BOOK_URL+'?dl='+Date.now(); a.download='book.pdf';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('ڈاؤن لوڈ شروع…');
+};
+document.getElementById('shareBtn').onclick=async()=>{
+  try{
+    if(!navigator.share){toast('شیئر سپورٹ نہیں');return;}
+    let files=null;
+    try{const r=await fetch(BOOK_URL); const b=await r.blob();
+      const f=new File([b],'book.pdf',{type:'application/pdf'});
+      if(navigator.canShare&&navigator.canShare({files:[f]})) files=[f];
+    }catch(_){}
+    await navigator.share(files?{files,title:'اردو کتاب'}:{title:'اردو کتاب',url:location.href});
+  }catch(e){}
+};
+
+/* ---------- Menu ---------- */
+const menuOverlay=document.getElementById('menuOverlay');
+function openMenu(){menuOverlay.classList.remove('hidden');}
+function closeAllModals(){
+  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));
+}
+document.getElementById('menuBtn').onclick=openMenu;
+document.getElementById('mClose').onclick=closeAllModals;
+menuOverlay.addEventListener('click',e=>{if(e.target===menuOverlay) closeAllModals();});
+
+document.getElementById('mDark').onclick=()=>{
+  darkMode=!darkMode; localStorage.setItem('bk_dark',darkMode?'1':'0');
+  applyDark(); closeAllModals();
+};
+document.getElementById('mDir').onclick=()=>{
+  dirMode=(dirMode==='rtl')?'ltr':'rtl';
+  localStorage.setItem('bk_dir',dirMode);
+  toast(dirMode==='rtl'?'RTL موڈ':'LTR موڈ'); closeAllModals();
+};
+document.getElementById('mBook').onclick=async()=>{
+  closeAllModals();
+  if(!confirm('موجودہ کتاب ہٹا کر نئی منتخب کریں؟')) return;
+  try{await fetch(DEL_URL,{method:'POST'});}catch(e){}
+  pdfDoc=null; pageCount=0; highlights={}; bookmarks=[];
+  document.getElementById('fileInput').value='';
+  document.getElementById('uploadInfo').textContent='';
+  document.getElementById('uploadProgress').classList.remove('show');
+  document.getElementById('uploadProgress').firstElementChild.style.width='0';
+  uploadScreen.classList.remove('hidden');
+};
+
+/* ---------- Bookmark toggle ---------- */
+document.getElementById('bmBtn').onclick=toggleBookmark;
+
+/* ---------- Bookmarks list ---------- */
+function openBookmarksList(){
+  const list=document.getElementById('bmList');
+  list.innerHTML='';
+  if(bookmarks.length===0){
+    list.innerHTML='<div class="empty-msg">کوئی بک مارک نہیں<br>🔖 بٹن سے موجودہ صفحہ محفوظ کریں</div>';
+  } else {
+    bookmarks.forEach(p=>{
+      const div=document.createElement('div');
+      div.className='bm-item';
+      div.innerHTML=`<span>📌 صفحہ ${p}</span><span class="del">✖</span>`;
+      div.onclick=(e)=>{
+        if(e.target.classList.contains('del')){
+          bookmarks=bookmarks.filter(x=>x!==p);
+          saveBookmarksServer(); updateBookmarkUI(); openBookmarksList();
+        } else {
+          goTo(p); closeAllModals();
+        }
+      };
+      list.appendChild(div);
+    });
+  }
+  document.getElementById('bmOverlay').classList.remove('hidden');
+}
+document.getElementById('mBookmarks').onclick=()=>{closeAllModals();openBookmarksList();};
+document.getElementById('bmClose').onclick=closeAllModals;
+document.getElementById('bmOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('bmOverlay')) closeAllModals();
+});
+
+/* ---------- Thumbnails ---------- */
+async function openThumbnails(){
+  closeAllModals();
+  const grid=document.getElementById('thumbsGrid');
+  grid.innerHTML='';
+  if(!pdfDoc){toast('کتاب لوڈ نہیں');return;}
+  const overlay=document.getElementById('thumbsOverlay');
+  overlay.classList.remove('hidden');
+  for(let i=1;i<=pageCount;i++){
+    const div=document.createElement('div');
+    div.className='thumb-item'+(i===pageNum?' current':'');
+    div.dataset.page=i;
+    div.innerHTML=`<div class="thumb-canvas-wrap"></div><div class="thumb-num">${i}</div>`;
+    div.onclick=()=>{goTo(i); closeAllModals();};
+    grid.appendChild(div);
+  }
+  const observer=new IntersectionObserver(async (entries)=>{
+    for(const entry of entries){
+      if(entry.isIntersecting && !entry.target.dataset.rendered){
+        entry.target.dataset.rendered='1';
+        const pn=parseInt(entry.target.dataset.page);
+        try{
+          const page=await pdfDoc.getPage(pn);
+          const vp=page.getViewport({scale:0.22});
+          const canvas=document.createElement('canvas');
+          canvas.width=vp.width; canvas.height=vp.height;
+          entry.target.querySelector('.thumb-canvas-wrap').appendChild(canvas);
+          await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+          observer.unobserve(entry.target);
+        }catch(e){console.warn('thumb fail',pn,e);}
+      }
+    }
+  },{root:grid, rootMargin:'200px'});
+  grid.querySelectorAll('.thumb-item').forEach(el=>observer.observe(el));
+}
+document.getElementById('mThumbs').onclick=openThumbnails;
+document.getElementById('thumbsClose').onclick=closeAllModals;
+document.getElementById('thumbsOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('thumbsOverlay')) closeAllModals();
+});
+
+/* ---------- Search ---------- */
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function doSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(q.length<2){toast('کم از کم 2 حروف');return;}
+  const status=document.getElementById('searchStatus'), results=document.getElementById('searchResults');
+  results.innerHTML='';
+  if(!pdfDoc){status.textContent='کتاب لوڈ نہیں';return;}
+  const qLower=q.toLowerCase();
+  const hits=[];
+  let totalText=0;
+  for(let i=1;i<=pageCount;i++){
+    status.textContent=`صفحہ ${i} / ${pageCount} چیک ہو رہا ہے...`;
+    try{
+      const page=await pdfDoc.getPage(i);
+      const tc=await page.getTextContent();
+      const text=tc.items.map(it=>it.str).join(' ');
+      totalText += text.trim().length;
+      if(text.toLowerCase().includes(qLower)){
+        const idx=text.toLowerCase().indexOf(qLower);
+        const snippet=text.substring(Math.max(0,idx-30), idx+q.length+30);
+        hits.push({page:i, snippet});
+      }
+    }catch(e){console.warn('search page',i,e);}
+  }
+  if(hits.length===0){
+    if(totalText<pageCount*10){
+      status.textContent='⚠ یہ scanned (تصویری) PDF ہے — متن تلاش نہیں ہو سکتا';
+    } else {
+      status.textContent=`کوئی نتیجہ نہیں (${pageCount} صفحات)`;
+    }
+    return;
+  }
+  status.textContent=`${hits.length} نتائج ملے`;
+  hits.forEach(h=>{
+    const div=document.createElement('div');
+    div.className='search-hit';
+    div.innerHTML=`<b>صفحہ ${h.page}</b><div>${escapeHtml(h.snippet)}</div>`;
+    div.onclick=()=>{goTo(h.page); closeAllModals();};
+    results.appendChild(div);
+  });
+}
+
+document.getElementById('mSearch').onclick=()=>{
+  closeAllModals();
+  document.getElementById('searchOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('searchInput').focus(),100);
+};
+document.getElementById('searchGo').onclick=doSearch;
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter') doSearch();});
+document.getElementById('searchClose').onclick=closeAllModals;
+document.getElementById('searchOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('searchOverlay')) closeAllModals();
+});
+
+/* ---------- Keyboard ---------- */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='ArrowRight') goTo(pageNum-1,false);
+  if(e.key==='ArrowLeft')  goTo(pageNum+1,true);
+  if(e.key==='Escape'){
+    highlightMode=false;hlBtn.classList.remove('on');
+    hlCanvas.classList.remove('active');colorBar.classList.remove('show');
+    closeAllModals();
+  }
+});
+
+/* ---------- Resize ---------- */
+let rzT; window.addEventListener('resize',()=>{clearTimeout(rzT);
+  rzT=setTimeout(()=>{if(pdfDoc) renderPage(pageNum,true);},250);});
+
+/* ---------- PWA install ---------- */
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); deferredPrompt=e;
+  document.getElementById('mInstall').style.display='flex';
+});
+document.getElementById('mInstall').onclick=async()=>{
+  closeAllModals();
+  if(!deferredPrompt){toast('براؤزر انسٹال سپورٹ نہیں (Chrome me try karein)');return;}
+  deferredPrompt.prompt();
+  const r=await deferredPrompt.userChoice;
+  if(r.outcome==='accepted') toast('ایپ انسٹال ہو گئی!');
+  deferredPrompt=null;
+  document.getElementById('mInstall').style.display='none';
+};
+
+/* ---------- Service worker ---------- */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(()=>console.log('[sw] registered'))
+    .catch(e=>console.warn('[sw] fail',e));
+}
+
+/* ---------- Init ---------- */
+init();
+})();
+</script>
+</body>
+</html>
